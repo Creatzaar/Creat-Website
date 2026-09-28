@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 190" width="600" height="190">
+  <defs>
+    <!-- Background rounded card (clean white) -->
+    <linearGradient id="cRibbonGrad" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#9333ea" />
+      <stop offset="30%" stop-color="#7928ca" />
+      <stop offset="60%" stop-color="#6d28d9" />
+      <stop offset="100%" stop-color="#581c87" />
+    </linearGradient>
+    <linearGradient id="cTopGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a855f7" />
+      <stop offset="50%" stop-color="#8b5cf6" />
+      <stop offset="100%" stop-color="#7c3aed" />
+    </linearGradient>
+    <linearGradient id="cBottomGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4c1d95" />
+      <stop offset="60%" stop-color="#6d28d9" />
+      <stop offset="100%" stop-color="#7c3aed" />
+    </linearGradient>
+    <linearGradient id="arrowPink" x1="10%" y1="100%" x2="90%" y2="0%">
+      <stop offset="0%" stop-color="#c026d3" />
+      <stop offset="50%" stop-color="#db2777" />
+      <stop offset="100%" stop-color="#f43f5e" />
+    </linearGradient>
+    <linearGradient id="arrowOrange" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fb923c" />
+      <stop offset="60%" stop-color="#f97316" />
+      <stop offset="100%" stop-color="#ea580c" />
+    </linearGradient>
+    <linearGradient id="hairline" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#a78bfa" stop-opacity="0" />
+      <stop offset="25%" stop-color="#c4b5fd" stop-opacity="0.7" />
+      <stop offset="50%" stop-color="#8b5cf6" stop-opacity="0.9" />
+      <stop offset="75%" stop-color="#c4b5fd" stop-opacity="0.7" />
+      <stop offset="100%" stop-color="#a78bfa" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+
+  <!-- Clean White Background -->
+  <rect width="100%" height="100%" fill="#ffffff" rx="8" />
+
+  <!-- EMBLEM ICON (Center at X: 300, Y: 56) -->
+  <g transform="translate(300, 56)">
+    <!-- Main 3D 'C' shape -->
+    <!-- Outer R: 42, Inner R: 23 -->
+    <path d="
+      M 28,-28
+      A 42,42 0 1 0 28,28
+      C 32,23 32,17 26,14
+      C 20,11 16,14 14,14
+      A 23,23 0 1 1 14,-14
+      C 16,-14 20,-11 26,-14
+      C 32,-17 32,-23 28,-28
+      Z
+    " fill="url(#cRibbonGrad)" />
+
+    <!-- Upper 3D gradient highlight curve -->
+    <path d="
+      M 28,-28
+      A 42,42 0 0 0 -38,-15
+      L -21,-8
+      A 23,23 0 0 1 14,-14
+      C 16,-14 20,-11 26,-14
+      C 32,-17 32,-23 28,-28
+      Z
+    " fill="url(#cTopGrad)" opacity="0.95" />
+
+    <!-- Bottom curve depth -->
+    <path d="
+      M -38,15
+      A 42,42 0 0 0 28,28
+      C 32,23 32,17 26,14
+      C 20,11 16,14 14,14
+      A 23,23 0 0 1 -21,8
+      Z
+    " fill="url(#cBottomGrad)" opacity="0.9" />
+
+    <!-- Dark 4-point Sparkle Star inside upper hole of C -->
+    <path d="
+      M -4,-21
+      Q -4,-13 -12,-13
+      Q -4,-13 -4,-5
+      Q -4,-13 4,-13
+      Q -4,-13 -4,-21
+      Z
+    " fill="#3b0764" />
+
+    <!-- Folded 3D Paper Aeroplane / Directional Arrow emerging through C -->
+    <!-- Base center approx (-2, 12), tip at (35, -20) -->
+    <!-- Left/Upper fold: vibrant magenta/pink -->
+    <polygon points="35,-20 -2,1 2,19" fill="url(#arrowPink)" />
+    <!-- Right/Lower fold: vibrant coral/orange -->
+    <polygon points="35,-20 2,19 18,13" fill="url(#arrowOrange)" />
+    <!-- Center fold crease -->
+    <line x1="2" y1="19" x2="35" y2="-20" stroke="#ffffff" stroke-width="0.8" opacity="0.6" />
+  </g>
+
+  <!-- BRAND NAME: CREATZAAR -->
+  <!-- Centered at Y: 136 -->
+  <!-- Wordmark rendered with precise letter positioning -->
+  <g transform="translate(300, 136)" text-anchor="middle">
+    <text font-family="'Montserrat', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="35" font-weight="900" letter-spacing="1.5">
+      <!-- CREAT in deep navy/slate-950 -->
+      <tspan fill="#120f2d" dx="-5">CREAT</tspan>
+      <!-- ZAAR in vibrant purple -->
+      <tspan fill="#7c3aed" dx="1">Z</tspan>
+      <tspan fill="#7c3aed" dx="1">A</tspan>
+      <!-- Stylized Lambda/Chevron second A -->
+      <tspan fill="#7c3aed" dx="1">&#923;</tspan>
+      <tspan fill="#7c3aed" dx="1">R</tspan>
+    </text>
+  </g>
+
+  <!-- HAIRLINE DIVIDER & CENTER DIAMOND -->
+  <line x1="185" y1="153" x2="415" y2="153" stroke="url(#hairline)" stroke-width="1.2" />
+  <!-- Sparkle Diamond in center of divider -->
+  <path d="M 300,149.5 L 303.5,153 L 300,156.5 L 296.5,153 Z" fill="#7c3aed" />
+
+  <!-- TAGLINE: CREATE. COLLABORATE. EARN. -->
+  <g transform="translate(300, 172)" text-anchor="middle">
+    <text font-family="'Montserrat', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="9.5" font-weight="800" fill="#334155" letter-spacing="4">CREATE. COLLABORATE. EARN.</text>
+  </g>
+</svg>

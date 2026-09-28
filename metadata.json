@@ -1,0 +1,6 @@
+{
+  "name": "Creatzaar",
+  "description": "Creator Marketing & Restaurant Growth Platform. Restaurants Get Customers. Creators Get Cashback.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
