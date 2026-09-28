@@ -27,31 +27,51 @@ export default function App() {
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
 
-  // Sync with window.location pathname on initial load & popstate
+  // Sync with window.location pathname / hash on initial load & navigation
   useEffect(() => {
     const handleLocationChange = () => {
-      const path = window.location.pathname.replace(/^\/+/, '').toLowerCase();
-      if (path === 'creators') setCurrentPage('creators');
-      else if (path === 'faq') setCurrentPage('faq');
-      else if (path === 'blog') setCurrentPage('blog');
-      else if (path === 'privacy-policy') setCurrentPage('privacy-policy');
-      else if (path === 'terms-and-conditions') setCurrentPage('terms-and-conditions');
-      else if (path === 'about') setIsAboutOpen(true);
+      // Check hash first (e.g. #creators or #/creators)
+      const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase().trim();
+      
+      // Also extract the last pathname segment (handles subfolder deployments like GitHub Pages)
+      const segments = window.location.pathname.split('/').filter(Boolean);
+      const lastSegment = segments[segments.length - 1]?.toLowerCase() || '';
+
+      const target = hash || lastSegment;
+
+      if (target === 'creators') setCurrentPage('creators');
+      else if (target === 'faq') setCurrentPage('faq');
+      else if (target === 'blog') setCurrentPage('blog');
+      else if (target === 'privacy-policy') setCurrentPage('privacy-policy');
+      else if (target === 'terms-and-conditions') setCurrentPage('terms-and-conditions');
+      else if (target === 'about') setIsAboutOpen(true);
       else setCurrentPage('restaurants');
     };
 
     handleLocationChange();
     window.addEventListener('popstate', handleLocationChange);
-    return () => window.removeEventListener('popstate', handleLocationChange);
+    window.addEventListener('hashchange', handleLocationChange);
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+      window.removeEventListener('hashchange', handleLocationChange);
+    };
   }, []);
 
   const handleNavigate = (page: PageView) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     try {
-      const url = page === 'restaurants' ? '/' : `/${page}`;
-      if (window.location.pathname !== url) {
-        window.history.pushState({ page }, '', url);
+      const newHash = page === 'restaurants' ? '' : `#${page}`;
+      if (window.location.hash !== newHash) {
+        if (!newHash) {
+          window.history.pushState(
+            { page },
+            '',
+            window.location.pathname + window.location.search
+          );
+        } else {
+          window.location.hash = newHash;
+        }
       }
     } catch {
       // ignore

@@ -1,6 +1,7 @@
 import React from 'react';
 import { PageView } from '../types';
 import { Instagram, Linkedin, Youtube, Heart } from 'lucide-react';
+import creatzaarLogo from '../assets/images/creatzaar-logo.png';
 
 interface FooterProps {
   onNavigate: (page: PageView) => void;
@@ -55,7 +56,7 @@ export const Footer: React.FC<FooterProps> = ({
               aria-label="Creatzaar"
             >
               <img
-                src="/creatzaar-logo.png"
+                src={creatzaarLogo}
                 alt="Creatzaar"
                 className="h-10 sm:h-12 w-auto object-contain"
               />
@@ -194,7 +195,7 @@ export const Footer: React.FC<FooterProps> = ({
               <ul className="space-y-2 text-sm">
                 <li>
                   <a
-                    href="/blog"
+                    href="#blog"
                     onClick={(e) => {
                       e.preventDefault();
                       handleNav('blog');
@@ -206,7 +207,7 @@ export const Footer: React.FC<FooterProps> = ({
                 </li>
                 <li>
                   <a
-                    href="/faq"
+                    href="#faq"
                     onClick={(e) => {
                       e.preventDefault();
                       handleNav('faq');
@@ -226,7 +227,7 @@ export const Footer: React.FC<FooterProps> = ({
               <ul className="space-y-2 text-sm">
                 <li>
                   <a
-                    href="/privacy-policy"
+                    href="#privacy-policy"
                     onClick={(e) => {
                       e.preventDefault();
                       handleNav('privacy-policy');
@@ -238,7 +239,7 @@ export const Footer: React.FC<FooterProps> = ({
                 </li>
                 <li>
                   <a
-                    href="/terms-and-conditions"
+                    href="#terms-and-conditions"
                     onClick={(e) => {
                       e.preventDefault();
                       handleNav('terms-and-conditions');

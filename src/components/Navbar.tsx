@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { PageView } from '../types';
 import { Sparkles, Menu, X, ArrowRight, PhoneCall } from 'lucide-react';
+import creatzaarLogo from '../assets/images/creatzaar-logo.png';
 
 interface NavbarProps {
   currentPage: PageView;
@@ -35,7 +36,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             aria-label="Creatzaar"
           >
             <img
-              src="/creatzaar-logo.png"
+              src={creatzaarLogo}
               alt="Creatzaar"
               className="h-9 sm:h-11 w-auto object-contain"
             />
