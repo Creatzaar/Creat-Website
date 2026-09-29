@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { StrategyCallFormData } from '../types';
-import { X, CheckCircle2, PhoneCall, Sparkles, Building2, MapPin, DollarSign, Instagram } from 'lucide-react';
+import { X, CheckCircle2, PhoneCall, Sparkles, Building2, MapPin, DollarSign, Instagram, Loader2, AlertCircle } from 'lucide-react';
+import { submitToGoogleSheets, RestaurantSubmissionPayload } from '../services/googleSheets';
 
 interface StrategyCallModalProps {
   isOpen: boolean;
@@ -16,20 +17,24 @@ const GOALS_OPTIONS = [
   'All of the above'
 ];
 
+const INITIAL_RESTAURANT_FORM: StrategyCallFormData = {
+  restaurantName: '',
+  contactPerson: '',
+  phone: '',
+  email: '',
+  city: 'Delhi NCR',
+  instagramHandle: '',
+  website: '',
+  locationsCount: '1-2 outlets',
+  monthlyBudget: '₹25,000 - ₹50,000',
+  goals: ['All of the above']
+};
+
 export const StrategyCallModal: React.FC<StrategyCallModalProps> = ({ isOpen, onClose }) => {
   const [submitted, setSubmitted] = useState(false);
-  const [formData, setFormData] = useState<StrategyCallFormData>({
-    restaurantName: '',
-    contactPerson: '',
-    phone: '',
-    email: '',
-    city: 'Delhi NCR',
-    instagramHandle: '',
-    website: '',
-    locationsCount: '1-2 outlets',
-    monthlyBudget: '₹25,000 - ₹50,000',
-    goals: ['All of the above']
-  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [formData, setFormData] = useState<StrategyCallFormData>(INITIAL_RESTAURANT_FORM);
 
   if (!isOpen) return null;
 
@@ -52,13 +57,75 @@ export const StrategyCallModal: React.FC<StrategyCallModalProps> = ({ isOpen, on
     setFormData({ ...formData, goals: updated });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    const submissionDate = new Date().toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    });
+
+    const formattedHandle = formData.instagramHandle.trim()
+      ? formData.instagramHandle.trim().startsWith('@')
+        ? formData.instagramHandle.trim()
+        : `@${formData.instagramHandle.trim()}`
+      : '';
+
+    const lookingForValue = formData.goals.length > 0
+      ? formData.goals.join(', ')
+      : 'All of the above';
+
+    const payload: RestaurantSubmissionPayload = {
+      formType: 'restaurant',
+      'Submission Date & Time': submissionDate,
+      'Restaurant Name': formData.restaurantName.trim(),
+      'Owner / Contact Person': formData.contactPerson.trim(),
+      'Phone Number': formData.phone.trim(),
+      'Email Address': formData.email.trim(),
+      'City': formData.city,
+      'Instagram Handle': formattedHandle,
+      'Restaurant Website': formData.website.trim(),
+      'Number of Locations': formData.locationsCount,
+      'Monthly Marketing Budget': formData.monthlyBudget,
+      'Looking For': lookingForValue,
+      // Resilient fallback properties for backend mapping
+      restaurantName: formData.restaurantName.trim(),
+      contactPerson: formData.contactPerson.trim(),
+      phone: formData.phone.trim(),
+      email: formData.email.trim(),
+      city: formData.city,
+      instagramHandle: formattedHandle,
+      website: formData.website.trim(),
+      locationsCount: formData.locationsCount,
+      monthlyBudget: formData.monthlyBudget,
+      lookingFor: lookingForValue,
+      goals: lookingForValue
+    };
+
+    try {
+      await submitToGoogleSheets(payload);
+      setSubmitted(true);
+      setFormData(INITIAL_RESTAURANT_FORM);
+    } catch (err: any) {
+      setSubmitError(err.message || 'Unable to submit your strategy call request. Please check your connection and try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleReset = () => {
     setSubmitted(false);
+    setSubmitError(null);
     onClose();
   };
 
@@ -69,7 +136,8 @@ export const StrategyCallModal: React.FC<StrategyCallModalProps> = ({ isOpen, on
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 rounded-xl text-[#94a3b8] hover:text-[#f8fafc] hover:bg-[#1e2d4d] transition-colors cursor-pointer"
+          disabled={isSubmitting}
+          className="absolute top-5 right-5 p-2 rounded-xl text-[#94a3b8] hover:text-[#f8fafc] hover:bg-[#1e2d4d] transition-colors cursor-pointer disabled:opacity-50"
           aria-label="Close modal"
         >
           <X className="w-5 h-5" />
@@ -84,22 +152,8 @@ export const StrategyCallModal: React.FC<StrategyCallModalProps> = ({ isOpen, on
               Strategy Call Requested!
             </h3>
             <p className="text-[#cbd5e1] text-sm max-w-md mx-auto leading-relaxed">
-              Thank you, <span className="text-[#a3e635] font-semibold">{formData.contactPerson || 'Partner'}</span>. Our restaurant growth specialist will contact you at <span className="text-[#f8fafc] font-medium">{formData.phone || formData.email}</span> within 4 business hours to curate your creator campaign.
+              Thanks for reaching out to Creatzaar. Your strategy call request has been submitted successfully. Our team will contact you shortly.
             </p>
-            <div className="p-4 bg-[#080d1a] border border-[#1e2d4d] rounded-xl text-xs text-[#cbd5e1] max-w-md mx-auto text-left space-y-1">
-              <div className="flex justify-between">
-                <span className="text-[#94a3b8]">Restaurant:</span>
-                <span className="text-[#f8fafc] font-medium">{formData.restaurantName || 'Your Venue'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[#94a3b8]">Selected Focus:</span>
-                <span className="text-[#f8fafc] font-medium">{formData.goals.slice(0, 2).join(', ') || 'Growth'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[#94a3b8]">Location:</span>
-                <span className="text-[#f8fafc] font-medium">{formData.city}</span>
-              </div>
-            </div>
             <div className="pt-2">
               <button
                 onClick={handleReset}
@@ -315,20 +369,42 @@ export const StrategyCallModal: React.FC<StrategyCallModalProps> = ({ isOpen, on
                 </div>
               </div>
 
+              {/* Submission Error Display */}
+              {submitError && (
+                <div className="p-3 rounded-xl bg-red-950/50 border border-red-500/30 text-xs text-red-300 flex items-start gap-2.5 animate-in fade-in duration-200">
+                  <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <span className="font-semibold text-red-200">Submission note: </span>
+                    <span>{submitError}</span>
+                  </div>
+                </div>
+              )}
+
               {/* CTA & Cancel Buttons */}
               <div className="pt-3">
                 <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-3">
                   <button
                     type="submit"
-                    className="w-full sm:flex-1 py-3.5 px-6 rounded-xl bg-[#a3e635] hover:bg-[#bef264] text-[#080d1a] font-bold text-sm sm:text-base shadow-lg shadow-[#a3e635]/20 flex items-center justify-center gap-2 transition-all transform active:scale-98 cursor-pointer"
+                    disabled={isSubmitting}
+                    className="w-full sm:flex-1 py-3.5 px-6 rounded-xl bg-[#a3e635] hover:bg-[#bef264] text-[#080d1a] font-bold text-sm sm:text-base shadow-lg shadow-[#a3e635]/20 flex items-center justify-center gap-2 transition-all transform active:scale-98 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed"
                   >
-                    <PhoneCall className="w-4 h-4" />
-                    <span>Book My Strategy Call</span>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Submitting...</span>
+                      </>
+                    ) : (
+                      <>
+                        <PhoneCall className="w-4 h-4" />
+                        <span>Book My Strategy Call</span>
+                      </>
+                    )}
                   </button>
                   <button
                     type="button"
                     onClick={onClose}
-                    className="w-full sm:w-auto px-6 py-3.5 rounded-xl border border-[#1e2d4d] hover:bg-[#1e2d4d] hover:border-[#334155] text-[#cbd5e1] hover:text-[#f8fafc] text-sm font-semibold transition-all cursor-pointer text-center"
+                    disabled={isSubmitting}
+                    className="w-full sm:w-auto px-6 py-3.5 rounded-xl border border-[#1e2d4d] hover:bg-[#1e2d4d] hover:border-[#334155] text-[#cbd5e1] hover:text-[#f8fafc] text-sm font-semibold transition-all cursor-pointer text-center disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Cancel
                   </button>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CreatorRegisterFormData } from '../types';
-import { X, CheckCircle2, Sparkles, Instagram, Award, ArrowRight } from 'lucide-react';
+import { X, CheckCircle2, Sparkles, Instagram, Award, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
+import { submitToGoogleSheets, CreatorSubmissionPayload } from '../services/googleSheets';
 
 interface CreatorRegisterModalProps {
   isOpen: boolean;
@@ -79,32 +80,101 @@ const PREFERRED_CITIES_OPTIONS = [
   'West India Cities'
 ];
 
+const INITIAL_FORM_DATA: CreatorRegisterFormData = {
+  fullName: '',
+  instagramUsername: '',
+  phone: '',
+  email: '',
+  city: '',
+  category: '',
+  followersRange: '',
+  avgReelViews: '',
+  profileUrl: '',
+  contentCategories: [],
+  languages: [],
+  preferredCities: []
+};
+
 export const CreatorRegisterModal: React.FC<CreatorRegisterModalProps> = ({ isOpen, onClose }) => {
   const [submitted, setSubmitted] = useState(false);
-  const [formData, setFormData] = useState<CreatorRegisterFormData>({
-    fullName: '',
-    instagramUsername: '',
-    phone: '',
-    email: '',
-    city: '',
-    category: '',
-    followersRange: '',
-    avgReelViews: '',
-    profileUrl: '',
-    contentCategories: [],
-    languages: [],
-    preferredCities: []
-  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [formData, setFormData] = useState<CreatorRegisterFormData>(INITIAL_FORM_DATA);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    const submissionDate = new Date().toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    });
+
+    const formattedUsername = formData.instagramUsername.trim().startsWith('@')
+      ? formData.instagramUsername.trim()
+      : `@${formData.instagramUsername.trim()}`;
+
+    const languagesText = formData.languages.length > 0
+      ? formData.languages.join(', ')
+      : 'English & Hindi';
+
+    const preferredCitiesText = formData.preferredCities.length > 0
+      ? formData.preferredCities.join(', ')
+      : formData.city;
+
+    const payload: CreatorSubmissionPayload = {
+      formType: 'creator',
+      'Submission Date & Time': submissionDate,
+      'Full Name': formData.fullName.trim(),
+      'Instagram Username': formattedUsername,
+      'Phone Number (WhatsApp)': formData.phone.trim(),
+      'Email Address': formData.email.trim(),
+      'Primary City': formData.city,
+      'Primary Creator Category': formData.category,
+      'Instagram Followers': formData.followersRange,
+      'Average Reel Views': formData.avgReelViews,
+      'Instagram Profile URL': formData.profileUrl.trim(),
+      'Languages Spoken / Captions': languagesText,
+      'Preferred Collaboration Cities': preferredCitiesText,
+      // Resilient fallback properties for backend mapping
+      fullName: formData.fullName.trim(),
+      instagramUsername: formattedUsername,
+      phone: formData.phone.trim(),
+      email: formData.email.trim(),
+      city: formData.city,
+      category: formData.category,
+      followers: formData.followersRange,
+      views: formData.avgReelViews,
+      profileUrl: formData.profileUrl.trim(),
+      languages: languagesText,
+      preferredCities: preferredCitiesText
+    };
+
+    try {
+      await submitToGoogleSheets(payload);
+      setSubmitted(true);
+      setFormData(INITIAL_FORM_DATA);
+    } catch (err: any) {
+      setSubmitError(err.message || 'Unable to submit your application. Please check your connection and try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleReset = () => {
     setSubmitted(false);
+    setSubmitError(null);
     onClose();
   };
 
@@ -117,14 +187,16 @@ export const CreatorRegisterModal: React.FC<CreatorRegisterModalProps> = ({ isOp
           <button
             type="button"
             onClick={onClose}
-            className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[#94a3b8] hover:text-[#f8fafc] hover:bg-[#1e2d4d] transition-colors cursor-pointer"
+            disabled={isSubmitting}
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[#94a3b8] hover:text-[#f8fafc] hover:bg-[#1e2d4d] transition-colors cursor-pointer disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[#94a3b8] hover:text-[#f8fafc] hover:bg-[#1e2d4d] transition-colors cursor-pointer"
+            disabled={isSubmitting}
+            className="p-1.5 rounded-lg text-[#94a3b8] hover:text-[#f8fafc] hover:bg-[#1e2d4d] transition-colors cursor-pointer disabled:opacity-50"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />
@@ -140,14 +212,14 @@ export const CreatorRegisterModal: React.FC<CreatorRegisterModalProps> = ({ isOp
               Application Submitted!
             </h3>
             <p className="text-[#cbd5e1] text-sm max-w-md mx-auto leading-relaxed">
-              Welcome to the Creatzaar Creator Network, <span className="text-[#a3e635] font-semibold">@{formData.instagramUsername.replace('@', '') || formData.fullName}</span>! Our creator curation team reviews accounts within 24 hours. Once verified, you will unlock immediate access to restaurant campaigns with up to 90% cashback.
+              You're in! Your Creatzaar creator application has been submitted successfully. Our team will review your profile and contact you shortly.
             </p>
             <div className="p-4 bg-[#080d1a] border border-[#1e2d4d] rounded-xl text-xs text-[#cbd5e1] max-w-md mx-auto space-y-2 text-left">
               <div className="flex items-center gap-2 text-[#a3e635] font-semibold">
                 <Sparkles className="w-4 h-4" /> Next Steps:
               </div>
               <p className="text-[#94a3b8]">1. Keep your Instagram profile public so our team can check content quality.</p>
-              <p className="text-[#94a3b8]">2. Watch your WhatsApp ({formData.phone}) for the invitation link to claim your first meal!</p>
+              <p className="text-[#94a3b8]">2. Watch your WhatsApp for the invitation link to claim your first meal!</p>
             </div>
             <div className="pt-3">
               <button
@@ -372,20 +444,42 @@ export const CreatorRegisterModal: React.FC<CreatorRegisterModalProps> = ({ isOp
                 </div>
               </div>
 
+              {/* Error Message */}
+              {submitError && (
+                <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-300 flex items-start gap-2.5 animate-in fade-in">
+                  <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <span className="font-semibold text-red-200">Submission note: </span>
+                    <span>{submitError}</span>
+                  </div>
+                </div>
+              )}
+
               {/* CTA & Cancel Button on Right-Hand Side */}
               <div className="pt-3">
                 <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-3">
                   <button
                     type="submit"
-                    className="w-full sm:flex-1 py-3.5 px-6 rounded-xl bg-[#a3e635] hover:bg-[#bef264] text-[#080d1a] font-bold text-sm sm:text-base shadow-lg shadow-[#a3e635]/20 flex items-center justify-center gap-2 transition-all transform active:scale-98 cursor-pointer"
+                    disabled={isSubmitting}
+                    className="w-full sm:flex-1 py-3.5 px-6 rounded-xl bg-[#a3e635] hover:bg-[#bef264] text-[#080d1a] font-bold text-sm sm:text-base shadow-lg shadow-[#a3e635]/20 flex items-center justify-center gap-2 transition-all transform active:scale-98 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed"
                   >
-                    <span>Join Creatzaar</span>
-                    <ArrowRight className="w-4 h-4" />
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Submitting...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Join Creatzaar</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
                   </button>
                   <button
                     type="button"
                     onClick={onClose}
-                    className="w-full sm:w-auto px-6 py-3.5 rounded-xl border border-[#1e2d4d] hover:bg-[#1e2d4d] hover:border-[#334155] text-[#cbd5e1] hover:text-[#f8fafc] text-sm font-semibold transition-all cursor-pointer text-center"
+                    disabled={isSubmitting}
+                    className="w-full sm:w-auto px-6 py-3.5 rounded-xl border border-[#1e2d4d] hover:bg-[#1e2d4d] hover:border-[#334155] text-[#cbd5e1] hover:text-[#f8fafc] text-sm font-semibold transition-all cursor-pointer text-center disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Cancel
                   </button>
