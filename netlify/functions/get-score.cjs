@@ -1,60 +1,60 @@
+const https = require("https");
+
+// Safe HTTPS request function (taaki fetch failed error kabhi na aaye)
+function makeRequest(url) {
+  return new Promise((resolve, reject) => {
+    https.get(url, (res) => {
+      let data = "";
+      res.on("data", (chunk) => (data += chunk));
+      res.on("end", () => {
+        try {
+          resolve(JSON.parse(data));
+        } catch (e) {
+          reject(new Error("Invalid JSON from Meta: " + data.substring(0, 100)));
+        }
+      });
+    }).on("error", (err) => reject(err));
+  });
+}
+
 exports.handler = async function (event, context) {
   const token = (process.env.IG_ACCESS_TOKEN || "").trim();
   const userId = (process.env.IG_USER_ID || "").trim();
 
-  if (!token) {
+  if (!token || !userId) {
     return {
       statusCode: 400,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ error: "Netlify mein IG_ACCESS_TOKEN missing hai" })
+      body: JSON.stringify({ error: "Netlify mein IG_ACCESS_TOKEN ya IG_USER_ID missing hai" })
     };
   }
 
   const targetUsername = event.queryStringParameters?.username;
 
   try {
-    let url = "";
-    
-    // Agar token IG se shuru hota hai (Instagram Login API)
-    if (token.startsWith("IG")) {
-      if (targetUsername) {
-        url = `https://instagram.com(${targetUsername}){username,name,followers_count,media_count,media.limit(10){like_count,comments_count,media_type}}&access_token=${token}`;
-      } else {
-        url = `https://instagram.com{like_count,comments_count,media_type}&access_token=${token}`;
-      }
+    // Unified Login Token hamesha ://facebook.com par kaam karta hai
+    const baseUrl = "https://://facebook.com/v21.0";
+    let fields = "";
+
+    if (targetUsername) {
+      fields = `business_discovery.username(${targetUsername}){username,name,followers_count,media_count,media.limit(10){like_count,comments_count,media_type}}`;
     } else {
-      // Agar token EAA se shuru hota hai (Facebook Graph API)
-      if (targetUsername) {
-        url = `https://facebook.com{userId}?fields=business_discovery.username(${targetUsername}){username,name,followers_count,media_count,media.limit(10){like_count,comments_count,media_type}}&access_token=${token}`;
-      } else {
-        url = `https://facebook.com{userId}?fields=username,name,followers_count,media_count,media.limit(10){like_count,comments_count,media_type}&access_token=${token}`;
-      }
+      fields = `username,name,followers_count,media_count,media.limit(10){like_count,comments_count,media_type}`;
     }
 
-    const response = await fetch(url);
-    const textResponse = await response.text();
+    const url = `${baseUrl}/${userId}?fields=${encodeURIComponent(fields)}&access_token=${encodeURIComponent(token)}`;
+    const rawData = await makeRequest(url);
 
-    // Check karna ki Meta ne JSON bheja hai ya HTML error page
-    let rawData;
-    try {
-      rawData = JSON.parse(textResponse);
-    } catch (e) {
-      return {
-        statusCode: 400,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          error: "Meta ne HTML page bheja hai (Token format galat ho sakta hai)", 
-          tokenStartsWith: token.substring(0, 5),
-          preview: textResponse.substring(0, 150)
-        })
-      };
-    }
-
+    // Agar Meta API koi error bhejta hai toh exact reason dikhana
     if (rawData.error) {
       return {
         statusCode: 400,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ metaError: rawData.error.message, code: rawData.error.code })
+        body: JSON.stringify({ 
+          metaError: rawData.error.message, 
+          type: rawData.error.type,
+          code: rawData.error.code 
+        })
       };
     }
 
@@ -73,6 +73,7 @@ exports.handler = async function (event, context) {
     const avgComments = posts.length ? totalComments / posts.length : 0;
     const engagementRate = followers > 0 ? (((avgLikes + avgComments) / followers) * 100).toFixed(2) : 0;
 
+    // Fake vs Real scoring logic (100 mein se)
     let score = 50;
     if (engagementRate >= 3) score += 30;
     else if (engagementRate >= 1) score += 15;
