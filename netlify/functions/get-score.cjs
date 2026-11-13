@@ -1,33 +1,55 @@
 exports.handler = async function (event, context) {
-  const token = process.env.IG_ACCESS_TOKEN;
-  const userId = process.env.IG_USER_ID;
+  const token = (process.env.IG_ACCESS_TOKEN || "").trim();
+  const userId = (process.env.IG_USER_ID || "").trim();
 
-  if (!token || !userId) {
+  if (!token) {
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: "Netlify mein IG_ACCESS_TOKEN ya IG_USER_ID missing hai" })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ error: "Netlify mein IG_ACCESS_TOKEN missing hai" })
     };
   }
 
   const targetUsername = event.queryStringParameters?.username;
 
   try {
-    // Instagram Login Token ke hisaab se endpoint select karna
-    const baseUrl = token.startsWith("IG") 
-      ? "https://instagram.com" 
-      : "https://facebook.com";
-
     let url = "";
-    if (targetUsername) {
-      url = `${baseUrl}/${userId}?fields=business_discovery.username(${targetUsername}){username,name,followers_count,media_count,media.limit(10){like_count,comments_count,media_type}}&access_token=${token}`;
+    
+    // Agar token IG se shuru hota hai (Instagram Login API)
+    if (token.startsWith("IG")) {
+      if (targetUsername) {
+        url = `https://instagram.com(${targetUsername}){username,name,followers_count,media_count,media.limit(10){like_count,comments_count,media_type}}&access_token=${token}`;
+      } else {
+        url = `https://instagram.com{like_count,comments_count,media_type}&access_token=${token}`;
+      }
     } else {
-      url = `${baseUrl}/${userId}?fields=username,name,followers_count,media_count,media.limit(10){like_count,comments_count,media_type}&access_token=${token}`;
+      // Agar token EAA se shuru hota hai (Facebook Graph API)
+      if (targetUsername) {
+        url = `https://facebook.com{userId}?fields=business_discovery.username(${targetUsername}){username,name,followers_count,media_count,media.limit(10){like_count,comments_count,media_type}}&access_token=${token}`;
+      } else {
+        url = `https://facebook.com{userId}?fields=username,name,followers_count,media_count,media.limit(10){like_count,comments_count,media_type}&access_token=${token}`;
+      }
     }
 
     const response = await fetch(url);
-    const rawData = await response.json();
+    const textResponse = await response.text();
 
-    // Agar Meta API koi error bhejta hai toh exact reason dikhana
+    // Check karna ki Meta ne JSON bheja hai ya HTML error page
+    let rawData;
+    try {
+      rawData = JSON.parse(textResponse);
+    } catch (e) {
+      return {
+        statusCode: 400,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          error: "Meta ne HTML page bheja hai (Token format galat ho sakta hai)", 
+          tokenStartsWith: token.substring(0, 5),
+          preview: textResponse.substring(0, 150)
+        })
+      };
+    }
+
     if (rawData.error) {
       return {
         statusCode: 400,
