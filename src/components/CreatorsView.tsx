@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { PageView, Campaign } from '../types';
+import { ScoreChecker } from './ScoreChecker';
 import {
   CAMPAIGNS,
   CREATOR_BENEFITS,
