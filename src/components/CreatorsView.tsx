@@ -134,6 +134,8 @@ export const CreatorsView: React.FC<CreatorsViewProps> = ({
           </div>
         </div>
       </section>
+      {/* Live Instagram Score Checker */}
+      <ScoreChecker />
 
       {/* 2. Creator Benefits (6 cards per Section 9) */}
       <section id="creatzaar-score" className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative scroll-mt-24">
